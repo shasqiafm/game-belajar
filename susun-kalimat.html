@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Susun Kalimat — Belajar EN/ID</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Kalam:wght@400;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --board: #1c2b23;
+    --board-dark: #16221b;
+    --chalk: #eef1e8;
+    --chalk-dim: #a9b6ac;
+    --yellow: #ffd873;
+    --coral: #ff8f8f;
+    --mint: #8fe3c0;
+    --wood: #5a4530;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{
+    margin:0; padding:0; height:100%;
+    background: #0e1712;
+    font-family:'JetBrains Mono', monospace;
+    color:var(--chalk);
+    overflow:hidden;
+  }
+  #app{ width:100%; height:100vh; display:flex; align-items:center; justify-content:center; }
+  #frame{
+    position:relative;
+    width:min(94vw, 460px);
+    height:min(92vh, 780px);
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(255,255,255,0.03), transparent 60%),
+      var(--board);
+    border-radius:10px;
+    border: 10px solid var(--wood);
+    box-shadow: 0 25px 60px -15px rgba(0,0,0,0.6), inset 0 0 40px rgba(0,0,0,0.35);
+    overflow:hidden;
+    display:flex; flex-direction:column;
+  }
+  /* chalk dust texture */
+  #frame::before{
+    content:'';
+    position:absolute; inset:0;
+    background-image: radial-gradient(rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 5px 5px;
+    pointer-events:none;
+  }
+  .topbar{
+    display:flex; justify-content:space-between; align-items:center;
+    padding: 14px 16px 8px;
+    font-size:12px;
+    letter-spacing:1px;
+    color: var(--chalk-dim);
+    position:relative; z-index:2;
+  }
+  .pill{
+    display:flex; align-items:center; gap:6px;
+    background: rgba(255,255,255,0.05);
+    padding:6px 12px;
+    border-radius:999px;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .hearts{ display:flex; gap:4px; }
+  .heart{ width:11px; height:11px; border-radius:50% 50% 50% 0; background:var(--coral); transform:rotate(45deg); box-shadow:0 0 6px rgba(255,143,143,0.5); }
+  .heart.lost{ background:rgba(255,255,255,0.08); box-shadow:none; }
+  .score-val{ color: var(--yellow); font-weight:600; }
+
+  .screen{
+    position:relative; z-index:2;
+    flex:1;
+    display:flex; flex-direction:column;
+    padding: 10px 22px 22px;
+    overflow:hidden;
+  }
+  .screen.hidden{ display:none; }
+
+  /* ---- Menu ---- */
+  .menu{ align-items:center; justify-content:center; text-align:center; gap:0; }
+  .chalk-title{
+    font-family:'Kalam', cursive;
+    font-weight:700;
+    font-size:40px;
+    color: var(--chalk);
+    line-height:1.05;
+    margin: 6px 0 2px;
+    text-shadow: 0 0 1px rgba(255,255,255,0.3);
+  }
+  .chalk-sub{
+    font-family:'Patrick Hand', cursive;
+    color: var(--mint);
+    font-size:17px;
+    margin-bottom:22px;
+  }
+  .section-label{
+    font-family:'Patrick Hand', cursive;
+    font-size:15px;
+    color: var(--chalk-dim);
+    margin: 14px 0 8px;
+    text-align:left;
+    width:100%;
+  }
+  .option-row{
+    display:flex; gap:8px; width:100%; flex-wrap:wrap;
+  }
+  .opt-btn{
+    flex:1;
+    min-width: 90px;
+    font-family:'Patrick Hand', cursive;
+    font-size:16px;
+    background: rgba(255,255,255,0.04);
+    border: 2px dashed rgba(255,255,255,0.18);
+    color: var(--chalk);
+    padding: 12px 8px;
+    border-radius:10px;
+    cursor:pointer;
+  }
+  .opt-btn.active{
+    border-style: solid;
+    border-color: var(--yellow);
+    background: rgba(255,216,115,0.12);
+    color: var(--yellow);
+  }
+  .start-btn{
+    margin-top:26px;
+    font-family:'Kalam', cursive;
+    font-weight:700;
+    font-size:20px;
+    background: var(--yellow);
+    color: #2a2005;
+    border:none;
+    padding: 14px 40px;
+    border-radius:999px;
+    cursor:pointer;
+    box-shadow: 0 10px 24px -8px rgba(255,216,115,0.5);
+  }
+  .start-btn:active{ transform: scale(0.97); }
+
+  /* ---- Game ---- */
+  .game{ justify-content:flex-start; gap: 14px; }
+  .hint-box{
+    background: rgba(255,255,255,0.04);
+    border: 1px dashed rgba(255,255,255,0.15);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-family:'Patrick Hand', cursive;
+    font-size: 16px;
+    color: var(--mint);
+    line-height:1.4;
+  }
+  .hint-box .tag{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10px;
+    letter-spacing:1.5px;
+    color: var(--chalk-dim);
+    text-transform:uppercase;
+    display:block;
+    margin-bottom:4px;
+  }
+  .answer-area{
+    min-height: 100px;
+    background: rgba(0,0,0,0.15);
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.06);
+    padding: 12px;
+    display:flex;
+    flex-wrap:wrap;
+    align-content:flex-start;
+    gap:8px;
+    position:relative;
+  }
+  .answer-area .placeholder{
+    font-family:'Patrick Hand', cursive;
+    color: rgba(255,255,255,0.2);
+    font-size:14px;
+    padding: 6px 2px;
+  }
+  .word-tile{
+    font-family:'Kalam', cursive;
+    font-weight:700;
+    font-size: 17px;
+    background: var(--chalk);
+    color: #22301f;
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor:pointer;
+    box-shadow: 0 3px 0 rgba(0,0,0,0.25);
+    transition: transform 0.1s ease;
+    user-select:none;
+  }
+  .word-tile:active{ transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.25); }
+  .word-tile.placed{
+    background: var(--yellow);
+  }
+  .word-tile.wrong-shake{
+    animation: shake 0.36s ease;
+    background: var(--coral) !important;
+  }
+  @keyframes shake{
+    0%,100%{ transform: translateX(0); }
+    25%{ transform: translateX(-5px); }
+    75%{ transform: translateX(5px); }
+  }
+  .bank-area{
+    flex:1;
+    display:flex;
+    flex-wrap:wrap;
+    align-content:flex-start;
+    gap:10px;
+    padding-top:4px;
+  }
+  .feedback{
+    text-align:center;
+    font-family:'Patrick Hand', cursive;
+    font-size:16px;
+    min-height: 22px;
+    color: var(--mint);
+  }
+  .feedback.bad{ color: var(--coral); }
+  .controls{
+    display:flex; gap:10px; justify-content:center; margin-top:auto;
+  }
+  .ctrl-btn{
+    font-family:'Patrick Hand', cursive;
+    font-size:14px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: var(--chalk);
+    padding:9px 18px;
+    border-radius:999px;
+    cursor:pointer;
+  }
+
+  /* ---- Game Over ---- */
+  .over{ align-items:center; justify-content:center; text-align:center; }
+  .over-score{
+    font-family:'Kalam', cursive;
+    font-weight:700;
+    font-size: 52px;
+    color: var(--yellow);
+    margin: 6px 0 0;
+  }
+  .over-label{
+    font-size:11px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color: var(--chalk-dim);
+    margin-bottom: 18px;
+  }
+  input[type=text]{
+    font-family:'Patrick Hand', cursive;
+    font-size:16px;
+    background: rgba(255,255,255,0.06);
+    border: 1px dashed rgba(255,255,255,0.25);
+    color: var(--chalk);
+    padding: 10px 14px;
+    border-radius:10px;
+    text-align:center;
+    width:220px;
+    margin-bottom:12px;
+    outline:none;
+  }
+  input[type=text]:focus{ border-color: var(--yellow); }
+  .board-wrap{
+    width:100%; max-width:280px; margin-top:16px; text-align:left;
+  }
+  .board-title{
+    font-family:'Patrick Hand', cursive;
+    font-size:14px;
+    color: var(--chalk-dim);
+    text-align:center;
+    margin-bottom:8px;
+  }
+  .board-row{
+    display:flex; justify-content:space-between;
+    font-size:12px;
+    padding:7px 12px;
+    border-radius:8px;
+    margin-bottom:4px;
+    background: rgba(255,255,255,0.03);
+  }
+  .board-row.top{ background: rgba(255,216,115,0.1); color: var(--yellow); }
+  .board-row .rank{ color: var(--chalk-dim); width:18px; }
+  .board-row.top .rank{ color: var(--yellow); }
+  .ad-slot{
+    height:44px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:9px; letter-spacing:1.5px; text-transform:uppercase;
+    color: var(--chalk-dim);
+    border-top: 1px solid rgba(255,255,255,0.06);
+    background: rgba(0,0,0,0.15);
+    position:relative; z-index:2;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="frame">
+
+    <div class="topbar">
+      <div class="pill hearts" id="heartsRow"></div>
+      <div class="pill">SKOR <span class="score-val" id="scoreVal">0</span></div>
+    </div>
+
+    <!-- MENU -->
+    <div class="screen menu" id="menuScreen">
+      <div class="chalk-title">Susun Kalimat</div>
+      <div class="chalk-sub">belajar Inggris &amp; Indonesia sambil main ✏️</div>
+
+      <div class="section-label">Mau belajar bahasa apa?</div>
+      <div class="option-row" id="langRow">
+        <button class="opt-btn active" data-lang="en">🇬🇧 Susun Bahasa Inggris</button>
+        <button class="opt-btn" data-lang="id">🇮🇩 Susun Bahasa Indonesia</button>
+      </div>
+
+      <div class="section-label">Tingkat kesulitan</div>
+      <div class="option-row" id="diffRow">
+        <button class="opt-btn active" data-diff="all">Semua</button>
+        <button class="opt-btn" data-diff="easy">Mudah</button>
+        <button class="opt-btn" data-diff="medium">Sedang</button>
+        <button class="opt-btn" data-diff="hard">Sulit</button>
+      </div>
+
+      <button class="start-btn" id="startBtn">Mulai Belajar</button>
+      <div class="board-wrap" id="menuBoard"></div>
+    </div>
+
+    <!-- GAME -->
+    <div class="screen game hidden" id="gameScreen">
+      <div class="hint-box">
+        <span class="tag" id="hintTag">Artinya</span>
+        <span id="hintText">—</span>
+      </div>
+      <div class="answer-area" id="answerArea">
+        <span class="placeholder">Ketuk kata di bawah untuk menyusun kalimat…</span>
+      </div>
+      <div class="feedback" id="feedback">&nbsp;</div>
+      <div class="bank-area" id="bankArea"></div>
+      <div class="controls">
+        <button class="ctrl-btn" id="resetTilesBtn">↺ Ulang Susunan</button>
+        <button class="ctrl-btn" id="skipBtn">Lewati →</button>
+      </div>
+    </div>
+
+    <!-- GAME OVER -->
+    <div class="screen over hidden" id="overScreen">
+      <div class="chalk-sub" style="color:var(--coral)">Waktunya istirahat!</div>
+      <div class="over-score" id="overScore">0</div>
+      <div class="over-label">Total Skor</div>
+      <input type="text" id="nameInput" placeholder="Nama untuk papan skor" maxlength="14">
+      <div class="option-row" style="max-width:220px">
+        <button class="start-btn" id="saveScoreBtn" style="flex:1; font-size:15px; padding:11px 0;">Simpan</button>
+        <button class="ctrl-btn" id="playAgainBtn" style="flex:1;">Main Lagi</button>
+      </div>
+      <div class="board-wrap" id="overBoard"></div>
+    </div>
+
+    <div class="ad-slot">Ruang Iklan · 320×50</div>
+  </div>
+</div>
+
+<script>
+(function(){
+
+  // ---------------- Sentence bank ----------------
+  const SENTENCES = [
+    // EASY (3-4 words)
+    { en:"I like coffee.", id:"Saya suka kopi.", diff:"easy" },
+    { en:"She is happy.", id:"Dia senang.", diff:"easy" },
+    { en:"We are friends.", id:"Kita berteman.", diff:"easy" },
+    { en:"He reads books.", id:"Dia membaca buku.", diff:"easy" },
+    { en:"They eat rice.", id:"Mereka makan nasi.", diff:"easy" },
+    { en:"The cat sleeps.", id:"Kucing itu tidur.", diff:"easy" },
+    { en:"I love you.", id:"Aku cinta kamu.", diff:"easy" },
+    { en:"This is my house.", id:"Ini rumah saya.", diff:"easy" },
+    { en:"The sun is bright.", id:"Matahari itu terang.", diff:"easy" },
+    { en:"Where do you live?", id:"Di mana kamu tinggal?", diff:"easy" },
+    { en:"I am very tired.", id:"Saya sangat lelah.", diff:"easy" },
+    { en:"This food is delicious.", id:"Makanan ini enak.", diff:"easy" },
+
+    // MEDIUM (5-8 words)
+    { en:"I go to school every day.", id:"Saya pergi ke sekolah setiap hari.", diff:"medium" },
+    { en:"She always drinks coffee in the morning.", id:"Dia selalu minum kopi di pagi hari.", diff:"medium" },
+    { en:"My brother works at a big company.", id:"Kakak saya bekerja di perusahaan besar.", diff:"medium" },
+    { en:"We watched a movie last night.", id:"Kami menonton film tadi malam.", diff:"medium" },
+    { en:"The weather is very cold today.", id:"Cuaca sangat dingin hari ini.", diff:"medium" },
+    { en:"I want to learn a new language.", id:"Saya ingin belajar bahasa baru.", diff:"medium" },
+    { en:"They are traveling to Bali next week.", id:"Mereka akan pergi ke Bali minggu depan.", diff:"medium" },
+    { en:"He plays football with his friends.", id:"Dia bermain sepak bola dengan temannya.", diff:"medium" },
+    { en:"My mother cooks food every Sunday.", id:"Ibu saya memasak makanan setiap hari Minggu.", diff:"medium" },
+    { en:"Can you help me with my homework?", id:"Bisakah kamu membantu pekerjaan rumah saya?", diff:"medium" },
+    { en:"This city is famous for its food.", id:"Kota ini terkenal karena makanannya.", diff:"medium" },
+    { en:"We need to leave the house now.", id:"Kita perlu meninggalkan rumah sekarang.", diff:"medium" },
+
+    // HARD (9-13 words)
+    { en:"Although it was raining, we still went outside.", id:"Meskipun hujan, kami tetap pergi keluar.", diff:"hard" },
+    { en:"She has been studying English for three years now.", id:"Dia sudah belajar bahasa Inggris selama tiga tahun sekarang.", diff:"hard" },
+    { en:"If you work hard, you will achieve your dreams.", id:"Jika kamu bekerja keras, kamu akan meraih impianmu.", diff:"hard" },
+    { en:"The teacher explained the lesson so everyone could understand.", id:"Guru itu menjelaskan pelajaran agar semua orang bisa mengerti.", diff:"hard" },
+    { en:"We should protect the environment for future generations.", id:"Kita harus menjaga lingkungan untuk generasi mendatang.", diff:"hard" },
+    { en:"Even though he was tired, he kept working until midnight.", id:"Meskipun dia lelah, dia terus bekerja sampai tengah malam.", diff:"hard" },
+    { en:"My father always tells me to never give up easily.", id:"Ayah saya selalu bilang agar saya tidak mudah menyerah.", diff:"hard" },
+    { en:"The company decided to launch a new product next month.", id:"Perusahaan itu memutuskan meluncurkan produk baru bulan depan.", diff:"hard" },
+    { en:"I believe that learning a language takes time and patience.", id:"Saya percaya bahwa belajar bahasa membutuhkan waktu dan kesabaran.", diff:"hard" },
+    { en:"After finishing his work, he decided to take a short rest.", id:"Setelah menyelesaikan pekerjaannya, dia memutuskan untuk beristirahat sebentar.", diff:"hard" },
+  ];
+
+  const POINTS = { easy: 10, medium: 20, hard: 35 };
+  const MAX_LIVES = 3;
+
+  // ---------------- State ----------------
+  let learnLang = 'en';
+  let diffFilter = 'all';
+  let pool = [];
+  let poolIdx = 0;
+  let current = null;
+  let placedTokens = []; // {word, id}
+  let bankTokens = [];   // {word, id}
+  let score = 0, lives = MAX_LIVES, streak = 0;
+
+  // ---------------- Elements ----------------
+  const menuScreen = document.getElementById('menuScreen');
+  const gameScreen = document.getElementById('gameScreen');
+  const overScreen = document.getElementById('overScreen');
+  const heartsRow = document.getElementById('heartsRow');
+  const scoreVal = document.getElementById('scoreVal');
+  const hintTag = document.getElementById('hintTag');
+  const hintText = document.getElementById('hintText');
+  const answerArea = document.getElementById('answerArea');
+  const bankArea = document.getElementById('bankArea');
+  const feedback = document.getElementById('feedback');
+  const overScore = document.getElementById('overScore');
+  const nameInput = document.getElementById('nameInput');
+  const menuBoard = document.getElementById('menuBoard');
+  const overBoard = document.getElementById('overBoard');
+
+  document.getElementById('langRow').addEventListener('click', e=>{
+    const btn = e.target.closest('.opt-btn'); if(!btn) return;
+    document.querySelectorAll('#langRow .opt-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    learnLang = btn.dataset.lang;
+  });
+  document.getElementById('diffRow').addEventListener('click', e=>{
+    const btn = e.target.closest('.opt-btn'); if(!btn) return;
+    document.querySelectorAll('#diffRow .opt-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    diffFilter = btn.dataset.diff;
+  });
+
+  function shuffle(arr){
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]] = [a[j],a[i]];
+    }
+    return a;
+  }
+
+  function buildPool(){
+    const filtered = diffFilter === 'all' ? SENTENCES.slice() : SENTENCES.filter(s=>s.diff===diffFilter);
+    pool = shuffle(filtered);
+    poolIdx = 0;
+  }
+
+  function updateHearts(){
+    heartsRow.innerHTML = '';
+    for(let i=0;i<MAX_LIVES;i++){
+      const d = document.createElement('div');
+      d.className = 'heart' + (i>=lives ? ' lost' : '');
+      heartsRow.appendChild(d);
+    }
+  }
+  function updateScore(){ scoreVal.textContent = score; }
+
+  function nextQuestion(){
+    if(poolIdx >= pool.length){ buildPool(); }
+    current = pool[poolIdx++];
+    const targetSentence = learnLang === 'en' ? current.en : current.id;
+    const hintSentence = learnLang === 'en' ? current.id : current.en;
+
+    hintTag.textContent = learnLang === 'en' ? 'Artinya (Bahasa Indonesia)' : 'Meaning (English)';
+    hintText.textContent = hintSentence;
+
+    const words = targetSentence.split(' ');
+    bankTokens = shuffle(words.map((w,i)=>({ word:w, uid: i+'-'+Math.random().toString(36).slice(2) })));
+    placedTokens = [];
+    feedback.textContent = '\u00A0';
+    feedback.className = 'feedback';
+    renderTiles();
+  }
+
+  function renderTiles(){
+    answerArea.innerHTML = '';
+    if(placedTokens.length === 0){
+      const ph = document.createElement('span');
+      ph.className = 'placeholder';
+      ph.textContent = 'Ketuk kata di bawah untuk menyusun kalimat…';
+      answerArea.appendChild(ph);
+    } else {
+      placedTokens.forEach(tok=>{
+        const el = document.createElement('div');
+        el.className = 'word-tile placed';
+        el.textContent = tok.word;
+        el.addEventListener('click', ()=>{
+          placedTokens = placedTokens.filter(t=>t.uid !== tok.uid);
+          bankTokens.push(tok);
+          renderTiles();
+        });
+        answerArea.appendChild(el);
+      });
+    }
+
+    bankArea.innerHTML = '';
+    bankTokens.forEach(tok=>{
+      const el = document.createElement('div');
+      el.className = 'word-tile';
+      el.textContent = tok.word;
+      el.addEventListener('click', ()=>{
+        bankTokens = bankTokens.filter(t=>t.uid !== tok.uid);
+        placedTokens.push(tok);
+        renderTiles();
+        if(bankTokens.length === 0){ checkAnswer(); }
+      });
+      bankArea.appendChild(el);
+    });
+  }
+
+  function checkAnswer(){
+    const target = (learnLang === 'en' ? current.en : current.id);
+    const built = placedTokens.map(t=>t.word).join(' ');
+    if(built === target){
+      const pts = Math.round(POINTS[current.diff] * (1 + Math.min(streak,5)*0.1));
+      score += pts;
+      streak += 1;
+      updateScore();
+      feedback.textContent = `Benar! +${pts} poin ${streak>1 ? '(streak x'+streak+')' : ''}`;
+      feedback.className = 'feedback';
+      setTimeout(nextQuestion, 850);
+    } else {
+      streak = 0;
+      lives -= 1;
+      updateHearts();
+      feedback.textContent = 'Belum tepat, coba susun ulang urutannya.';
+      feedback.className = 'feedback bad';
+      document.querySelectorAll('.word-tile.placed').forEach(el=> el.classList.add('wrong-shake'));
+      setTimeout(()=>{
+        // send tiles back to bank, reshuffled
+        bankTokens = shuffle(placedTokens.concat(bankTokens));
+        placedTokens = [];
+        renderTiles();
+        if(lives <= 0) endGame();
+      }, 500);
+    }
+  }
+
+  document.getElementById('resetTilesBtn').addEventListener('click', ()=>{
+    bankTokens = shuffle(placedTokens.concat(bankTokens));
+    placedTokens = [];
+    renderTiles();
+  });
+  document.getElementById('skipBtn').addEventListener('click', ()=>{
+    streak = 0;
+    nextQuestion();
+  });
+
+  function startGame(){
+    score = 0; lives = MAX_LIVES; streak = 0;
+    updateScore(); updateHearts();
+    buildPool();
+    menuScreen.classList.add('hidden');
+    overScreen.classList.add('hidden');
+    gameScreen.classList.remove('hidden');
+    nextQuestion();
+  }
+
+  function endGame(){
+    gameScreen.classList.add('hidden');
+    overScreen.classList.remove('hidden');
+    overScore.textContent = score;
+    nameInput.value = '';
+    document.getElementById('saveScoreBtn').textContent = 'Simpan';
+    document.getElementById('saveScoreBtn').disabled = false;
+    refreshBoards();
+  }
+
+  document.getElementById('startBtn').addEventListener('click', startGame);
+  document.getElementById('playAgainBtn').addEventListener('click', startGame);
+
+  // ---------------- Leaderboard ----------------
+  async function loadLeaderboard(){
+    try{
+      const res = await window.storage.get('susun-kalimat:leaderboard', true);
+      if(res && res.value) return JSON.parse(res.value);
+    }catch(e){}
+    return [];
+  }
+  async function saveScore(name, sc){
+    let board = await loadLeaderboard();
+    board.push({ name: name || 'Anonim', score: sc, lang: learnLang, t: Date.now() });
+    board.sort((a,b)=> b.score - a.score);
+    board = board.slice(0,20);
+    try{ await window.storage.set('susun-kalimat:leaderboard', JSON.stringify(board), true); }catch(e){}
+    return board;
+  }
+  function esc(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+  function renderBoard(el, board){
+    el.innerHTML = '';
+    const title = document.createElement('div');
+    title.className = 'board-title';
+    title.textContent = 'Papan Skor Global';
+    el.appendChild(title);
+    if(!board.length){
+      const p = document.createElement('div');
+      p.className = 'board-title';
+      p.textContent = 'Belum ada skor';
+      el.appendChild(p);
+      return;
+    }
+    board.slice(0,8).forEach((row,i)=>{
+      const r = document.createElement('div');
+      r.className = 'board-row' + (i===0?' top':'');
+      const flag = row.lang === 'en' ? '🇬🇧' : '🇮🇩';
+      r.innerHTML = `<span class="rank">${i+1}</span><span style="flex:1;margin:0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${flag} ${esc(row.name)}</span><span>${row.score}</span>`;
+      el.appendChild(r);
+    });
+  }
+  async function refreshBoards(){
+    const board = await loadLeaderboard();
+    renderBoard(menuBoard, board);
+    renderBoard(overBoard, board);
+  }
+
+  document.getElementById('saveScoreBtn').addEventListener('click', async ()=>{
+    const btn = document.getElementById('saveScoreBtn');
+    btn.disabled = true;
+    btn.textContent = 'Menyimpan...';
+    const board = await saveScore(nameInput.value.trim(), score);
+    renderBoard(overBoard, board);
+    renderBoard(menuBoard, board);
+    btn.textContent = 'Tersimpan ✓';
+  });
+
+  updateHearts();
+  updateScore();
+  refreshBoards();
+})();
+</script>
+</body>
+</html>
